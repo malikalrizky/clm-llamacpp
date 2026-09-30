@@ -9,6 +9,7 @@ The reference head expects Qwen3-8B with last-token pooling, e.g.
 from __future__ import annotations
 
 import base64
+import os
 import threading
 from collections import OrderedDict
 from typing import Any
@@ -38,8 +39,9 @@ class Embedder:
             self.session.headers["Authorization"] = f"Bearer {api_key}"
 
     def _fetch(self, texts: list[str]) -> tuple[list[np.ndarray], int]:
-        body: dict[str, Any] = {"model": self.model, "input": texts, "encoding_format": "base64"}
-        if self.max_tokens:
+        # llama.cpp OpenAI route prefers float; base64 remains accepted on decode.
+        body: dict[str, Any] = {"model": self.model, "input": texts, "encoding_format": "float"}
+        if os.environ.get("CLM_TRUNCATE_PROMPT_TOKENS") == "1" and self.max_tokens:
             body["truncate_prompt_tokens"] = self.max_tokens
         try:
             r = self.session.post(self.url, json=body, timeout=self.timeout)
