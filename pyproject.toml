@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clm-test"
+version = "0.1.0"
+description = "Local CLM playground with llama.cpp embeddings (no vLLM)"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "requests>=2.28",
+  "torch>=2.1",
+  "fastapi>=0.100",
+  "uvicorn>=0.23",
+  "huggingface_hub>=0.20",
+]
+
+[project.scripts]
+clm-serve = "clm.server:main"
+clm-download = "clm.heads:download_main"
+
+[tool.setuptools.packages.find]
+where = ["vendor"]
+
+[tool.setuptools.package-data]
+clm = ["py.typed", "static/*"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
