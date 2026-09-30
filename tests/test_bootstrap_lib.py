@@ -7,7 +7,7 @@ def test_require_macos_arm64_rejects_linux(monkeypatch):
     monkeypatch.setattr("scripts.bootstrap_lib.platform.machine", lambda: "arm64")
     with pytest.raises(SystemExit) as ei:
         require_macos_arm64()
-    assert "macOS" in str(ei.value).lower() or "darwin" in str(ei.value).lower()
+    assert "macos" in str(ei.value).lower() or "darwin" in str(ei.value).lower()
 
 def test_sha256_file(tmp_path):
     p = tmp_path / "f.bin"
