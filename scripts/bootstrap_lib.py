@@ -50,7 +50,13 @@ def ensure_llama_server(bin_dir: Path) -> Path:
     bin_dir.mkdir(parents=True, exist_ok=True)
     server = bin_dir / "llama-server"
     marker = bin_dir / f".{pins.LLAMA_ASSET}.sha256"
-    if server.is_file() and marker.is_file() and marker.read_text().strip() == pins.LLAMA_SHA256:
+    dylib = bin_dir / "libllama-server-impl.dylib"
+    if (
+        server.is_file()
+        and dylib.is_file()
+        and marker.is_file()
+        and marker.read_text().strip() == pins.LLAMA_SHA256
+    ):
         print(f"Already present: {server}")
         return server
 
@@ -60,15 +66,23 @@ def ensure_llama_server(bin_dir: Path) -> Path:
     with tempfile.TemporaryDirectory(prefix="llama-extract-") as td:
         with tarfile.open(tarball, "r:gz") as tf:
             tf.extractall(td)
-        found = None
-        for root, _dirs, files in os.walk(td):
-            if "llama-server" in files:
-                found = Path(root) / "llama-server"
-                break
-        if found is None:
-            raise SystemExit(f"llama-server not found inside {tarball.name}")
-        shutil.copy2(found, server)
-        server.chmod(server.stat().st_mode | 0o111)
+        # Release layout: llama-b11272/{llama-server, *.dylib, ...}
+        roots = [p for p in Path(td).iterdir() if p.is_dir()]
+        src_root = roots[0] if len(roots) == 1 else Path(td)
+        for path in src_root.iterdir():
+            dest = bin_dir / path.name
+            if path.is_dir():
+                if dest.exists():
+                    shutil.rmtree(dest)
+                shutil.copytree(path, dest)
+            else:
+                shutil.copy2(path, dest)
+                if path.name == "llama-server":
+                    dest.chmod(dest.stat().st_mode | 0o111)
+        if not server.is_file():
+            raise SystemExit(f"llama-server not found after extracting {tarball.name}")
+        if not dylib.is_file():
+            raise SystemExit(f"libllama-server-impl.dylib missing after extracting {tarball.name}")
 
     marker.write_text(pins.LLAMA_SHA256 + "\n")
     print(f"Installed {server}")
