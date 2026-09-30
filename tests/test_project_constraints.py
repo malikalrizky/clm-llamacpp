@@ -1,10 +1,14 @@
 from pathlib import Path
 import re
-import tomllib
+
+def _dependency_lines() -> list[str]:
+    text = Path("pyproject.toml").read_text()
+    m = re.search(r"dependencies\s*=\s*\[(.*?)\]", text, re.S)
+    assert m, "dependencies list missing"
+    return re.findall(r'"([^"]+)"', m.group(1))
 
 def test_pyproject_omits_vllm_dependency():
-    data = tomllib.loads(Path("pyproject.toml").read_text())
-    deps = data["project"]["dependencies"]
+    deps = _dependency_lines()
     assert not any(re.match(r"(?i)vllm(\s|$|[><=!])", d) for d in deps)
 
 def test_required_deps_listed():
