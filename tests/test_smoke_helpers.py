@@ -17,3 +17,11 @@ def test_assert_rank_rejects_uniform():
             {"candidate": "b", "prob": 0.33},
             {"candidate": "c", "prob": 0.33},
         ], min_top_prob=0.6)
+
+def test_assert_rank_requires_moon_winner():
+    with pytest.raises(AssertionError):
+        assert_rank_not_uniform([
+            {"candidate": "Photosynthesis in plants.", "prob": 0.9},
+            {"candidate": "The Moon's gravitational pull.", "prob": 0.05},
+            {"candidate": "Because the Earth is round.", "prob": 0.05},
+        ], min_top_prob=0.6, expected_substring="Moon")

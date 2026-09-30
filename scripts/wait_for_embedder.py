@@ -1,4 +1,4 @@
-"""Poll llama-server until /v1/models responds."""
+"""Poll llama-server until /health responds 200 (not /v1/models — that is up during load)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import requests
 
 
 def wait_for_embedder(base_url: str, timeout_s: float = 120.0) -> None:
-    url = base_url.rstrip("/") + "/v1/models"
+    url = base_url.rstrip("/") + "/health"
     deadline = time.monotonic() + timeout_s
     last_err: Exception | None = None
     while time.monotonic() < deadline:

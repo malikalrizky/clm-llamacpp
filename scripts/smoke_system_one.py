@@ -27,12 +27,22 @@ def assert_structured_answers(payload: dict[str, Any]) -> None:
             raise AssertionError(f"missing typed fields: {v!r}")
 
 
-def assert_rank_not_uniform(ranked: list[dict[str, Any]], min_top_prob: float = 0.6) -> None:
+def assert_rank_not_uniform(
+    ranked: list[dict[str, Any]],
+    min_top_prob: float = 0.6,
+    expected_substring: str | None = "Moon",
+) -> None:
     if not ranked:
         raise AssertionError("empty ranked list")
     top = float(ranked[0].get("prob", 0.0))
     if top < min_top_prob:
         raise AssertionError(f"top prob {top} < {min_top_prob}; ranking looks flat/wrong pooling?")
+    if expected_substring is not None:
+        cand = str(ranked[0].get("candidate", ""))
+        if expected_substring not in cand:
+            raise AssertionError(
+                f"expected top candidate to contain {expected_substring!r}, got {cand!r}"
+            )
 
 
 def main(argv: list[str] | None = None) -> int:

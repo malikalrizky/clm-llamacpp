@@ -93,20 +93,32 @@ def ensure_gguf(models_dir: Path) -> Path:
     models_dir.mkdir(parents=True, exist_ok=True)
     dest = models_dir / pins.GGUF_FILE
     if dest.is_file() and dest.stat().st_size > 0:
-        print(f"Already present: {dest}")
-        return dest
+        got = sha256_file(dest)
+        if got == pins.GGUF_SHA256:
+            print(f"Already present: {dest}")
+            return dest
+        print(f"checksum mismatch for existing {dest.name}; re-downloading")
+        dest.unlink()
     try:
         from huggingface_hub import hf_hub_download
     except ImportError as e:
         raise SystemExit("huggingface_hub required to download GGUF") from e
-    print(f"Downloading {pins.GGUF_REPO}/{pins.GGUF_FILE}")
-    path = hf_hub_download(pins.GGUF_REPO, pins.GGUF_FILE, local_dir=str(models_dir))
+    print(f"Downloading {pins.GGUF_REPO}/{pins.GGUF_FILE}@{pins.GGUF_REVISION}")
+    path = hf_hub_download(
+        pins.GGUF_REPO,
+        pins.GGUF_FILE,
+        revision=pins.GGUF_REVISION,
+        local_dir=str(models_dir),
+    )
     path = Path(path)
     if path.resolve() != dest.resolve() and path.is_file():
         if not dest.exists():
             shutil.copy2(path, dest)
     if not dest.is_file():
         raise SystemExit(f"GGUF missing after download: {dest}")
+    got = sha256_file(dest)
+    if got != pins.GGUF_SHA256:
+        raise SystemExit(f"checksum mismatch for {dest.name}: got {got}, want {pins.GGUF_SHA256}")
     return dest
 
 

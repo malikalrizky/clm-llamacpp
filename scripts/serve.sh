@@ -36,6 +36,9 @@ trap cleanup EXIT INT TERM
   --embedding \
   --pooling last \
   --ctx-size 2048 \
+  --ubatch-size 2048 \
+  --batch-size 2048 \
+  --parallel 1 \
   --embd-normalize 2 \
   --alias "$EMB_MODEL" \
   &
@@ -44,7 +47,8 @@ echo "llama-server pid=$LLAMA_PID"
 
 uv run python -m scripts.wait_for_embedder "$EMB_URL" 180
 
-exec uv run clm-serve \
+uv run clm-serve \
+  --host 127.0.0.1 \
   --port 8700 \
   --emb-url "${EMB_URL}/v1/embeddings" \
   --emb-model "$EMB_MODEL"
